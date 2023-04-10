@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/whicencer/react-finance-backend/handlers"
+	"github.com/whicencer/react-finance-backend/middleware"
 )
 
 func SetupRoutes(app *fiber.App) {
@@ -11,10 +12,10 @@ func SetupRoutes(app *fiber.App) {
 
 	auth.Post("/signup", handlers.Register)
 	auth.Post("/signin", handlers.Login)
-	auth.Get("/me", handlers.GetMe)
+	auth.Get("/me", middleware.AuthMiddleware, handlers.GetMe)
 
 	// Me Group
-	user := app.Group("/me")
+	user := app.Group("/me", middleware.AuthMiddleware)
 
-	user.Get("/cards", handlers.GetCards)
+	user.Get("/cards", handlers.GetMyCards)
 }

@@ -1,6 +1,10 @@
 package handlers
 
 import (
+	"os"
+	"time"
+
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/whicencer/react-finance-backend/database"
@@ -55,10 +59,17 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	if err := db.Create(&user).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Some error occured: " + err.Error(),
-			"ok":      false,
-		})
+		if err.Error() == "duplicated key not allowed" {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "This username is already taken",
+				"ok":      false,
+			})
+		} else {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Some error occured: " + err.Error(),
+				"ok":      false,
+			})
+		}
 	}
 
 	card := models.Card{
@@ -86,10 +97,72 @@ func Register(c *fiber.Ctx) error {
 
 // Login
 func Login(c *fiber.Ctx) error {
-	return c.SendString("Login")
+	db := database.DB
+
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := c.BodyParser(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+			"ok":      false,
+		})
+	}
+
+	var dbUser models.User
+
+	if err := db.Where("username = ?", body.Username).First(&dbUser).Error; err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid login or password",
+			"ok":      false,
+		})
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(body.Password)); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"message": "Invalid login or password",
+			"ok":      false,
+		})
+	}
+
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	claims := token.Claims.(jwt.MapClaims)
+	claims["username"] = dbUser.Username
+	claims["id"] = dbUser.ID
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+
+	t, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "You have successfully logged in",
+		"token":   t,
+		"ok":      true,
+	})
 }
 
 // Get me
 func GetMe(c *fiber.Ctx) error {
-	return c.SendString("Get me")
+	db := database.DB
+	var user models.User
+
+	claims := c.Locals("claims").(jwt.MapClaims)
+	id := claims["id"].(float64)
+
+	if err := db.Where("ID = ?", id).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Cannot find user",
+			"ok":      false,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"user": user,
+		"ok":   true,
+	})
 }
