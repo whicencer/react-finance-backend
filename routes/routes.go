@@ -17,5 +17,7 @@ func SetupRoutes(app *fiber.App) {
 	// Me Group
 	user := app.Group("/me", middleware.AuthMiddleware)
 
-	user.Get("/cards", handlers.GetMyCards)
+	user.Get("/cards", handlers.GetCards)
+	user.Post("/cards", handlers.CreateCard)
+	user.Post("/cards/updateName", handlers.UpdateCardName)
 }
