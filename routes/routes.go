@@ -20,4 +20,5 @@ func SetupRoutes(app *fiber.App) {
 	user.Get("/cards", handlers.GetCards)
 	user.Post("/cards", handlers.CreateCard)
 	user.Post("/cards/updateName", handlers.UpdateCardName)
+	user.Post("/cards/updateTheme", handlers.UpdateCardTheme)
 }

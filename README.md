@@ -3,6 +3,7 @@
 ## To-Do
 - ~Auth~
 - Cards CRUD
-  - Changing card theme
+  - ~Changing card theme~
+  - Deleting card
   - ~Changing card name~
 - Transactions CRD

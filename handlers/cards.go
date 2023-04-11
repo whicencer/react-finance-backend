@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -100,4 +102,53 @@ func UpdateCardName(c *fiber.Ctx) error {
 		"message": "Card name was successfully changed",
 		"ok":      true,
 	})
+}
+
+func UpdateCardTheme(c *fiber.Ctx) error {
+	db := database.DB
+	claims := c.Locals("claims").(jwt.MapClaims)
+
+	userId := claims["id"].(float64)
+	cardId := c.FormValue("card_id")
+	newThemeIdStr := c.FormValue("theme_id")
+
+	if cardId == "" || newThemeIdStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+			"ok":      false,
+		})
+	}
+
+	newThemeId, err := strconv.Atoi(newThemeIdStr)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "theme_id should be a number",
+			"ok":      false,
+		})
+	}
+
+	var card models.Card
+
+	if err := db.Where(&models.Card{ID: cardId, UserID: uint(userId)}).First(&card).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Card was not found",
+			"ok":      false,
+		})
+	}
+
+	card.ThemeId = newThemeId
+
+	if err := db.Save(&card).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Some error occured: " + err.Error(),
+			"ok":      false,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Card theme was successfully changed",
+		"ok":      true,
+	})
+
 }
