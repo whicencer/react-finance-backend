@@ -25,7 +25,7 @@ func Connect() {
 
 	log.Println("Connected")
 
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(&models.User{}, &models.Card{}, &models.Transaction{})
 
 	DB = db
 }

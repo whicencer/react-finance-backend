@@ -6,17 +6,9 @@ import (
 
 type User struct {
 	gorm.Model
-	Username string `json:"username" gorm:"unique"`
-	Balance  int    `json:"balance"`
-	Cards    []Card `json:"cards" gorm:"foreignKey:UserID"`
-	Password string `json:"-"`
-}
-
-type Card struct {
-	gorm.Model
-	ID       string
-	Balance  int    `json:"balance"`
-	CardName string `json:"cardName"`
-	ThemeId  int    `json:"themeId"`
-	UserID   uint   `json:"user_id"`
+	Username     string        `json:"username" gorm:"unique"`
+	Balance      int           `json:"balance"`
+	Cards        []Card        `json:"cards" gorm:"foreignKey:UserID"`
+	Transactions []Transaction `json:"transactions" gorm:"foreignKey:UserID"`
+	Password     string        `json:"-"`
 }
