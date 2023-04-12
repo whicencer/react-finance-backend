@@ -8,5 +8,5 @@
   - ~Changing card name~
 - Transactions CRD
   - Get Transactions
-  - Create Transaction
+  ~- Create Transaction~
   - Delete Transaction
