@@ -4,6 +4,6 @@
 - ~Auth~
 - Cards CRUD
   - ~Changing card theme~
-  - Deleting card
+  - ~Deleting card~
   - ~Changing card name~
 - Transactions CRD

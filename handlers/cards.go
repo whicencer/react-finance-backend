@@ -80,6 +80,13 @@ func UpdateCardName(c *fiber.Ctx) error {
 	cardId := c.FormValue("card_id")
 	newName := c.FormValue("card_name")
 
+	if cardId == "" || newName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+			"ok":      false,
+		})
+	}
+
 	var card models.Card
 
 	if err := db.Where(&models.Card{ID: cardId, UserID: uint(userId)}).First(&card).Error; err != nil {
@@ -151,4 +158,39 @@ func UpdateCardTheme(c *fiber.Ctx) error {
 		"ok":      true,
 	})
 
+}
+
+func DeleteCard(c *fiber.Ctx) error {
+	db := database.DB
+	claims := c.Locals("claims").(jwt.MapClaims)
+	userId := claims["id"].(float64)
+	cardId := c.FormValue("card_id")
+
+	if cardId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid request body",
+			"ok":      false,
+		})
+	}
+
+	var card models.Card
+
+	if err := db.Where(&models.Card{ID: cardId, UserID: uint(userId)}).First(&card).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Card was not found",
+			"ok":      false,
+		})
+	}
+
+	if err := db.Unscoped().Delete(&card).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Some error occured: " + err.Error(),
+			"ok":      false,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Card was successfully deleted",
+		"ok":      true,
+	})
 }
