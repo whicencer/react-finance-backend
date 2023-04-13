@@ -26,4 +26,5 @@ func SetupRoutes(app *fiber.App) {
 
 	// Transaction
 	user.Post("/transactions", handlers.CreateTransaction)
+	user.Get("/transactions", handlers.GetTransactions)
 }

@@ -58,3 +58,22 @@ func CreateTransaction(c *fiber.Ctx) error {
 		"transaction": transaction,
 	})
 }
+
+func GetTransactions(c *fiber.Ctx) error {
+	db := database.DB
+	claims := c.Locals("claims").(jwt.MapClaims)
+	userId := claims["id"].(float64)
+
+	var transactions []models.Transaction
+	if err := db.Where(&models.Transaction{UserID: uint(userId)}).First(&transactions).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Transactions were not found",
+			"ok":      false,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"transactions": transactions,
+		"ok":           true,
+	})
+}

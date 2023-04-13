@@ -7,6 +7,6 @@
   - ~Deleting card~
   - ~Changing card name~
 - Transactions CRD
-  - Get Transactions
+  - ~Get Transactions~
   - ~Create Transaction~
   - Delete Transaction
