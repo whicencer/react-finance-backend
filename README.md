@@ -11,3 +11,4 @@
   - ~Create Transaction~
   - ~Delete Transaction~
   - Change balance on adding transaction
+  - Change balance on deleting transaction
