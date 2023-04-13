@@ -9,4 +9,5 @@
 - Transactions CRD
   - ~Get Transactions~
   - ~Create Transaction~
-  - Delete Transaction
+  - ~Delete Transaction~
+  - Change balance on adding transaction

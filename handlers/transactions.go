@@ -65,7 +65,7 @@ func GetTransactions(c *fiber.Ctx) error {
 	userId := claims["id"].(float64)
 
 	var transactions []models.Transaction
-	if err := db.Where(&models.Transaction{UserID: uint(userId)}).First(&transactions).Error; err != nil {
+	if err := db.Where(&models.Transaction{UserID: uint(userId)}).Find(&transactions).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "Transactions were not found",
 			"ok":      false,
@@ -75,5 +75,39 @@ func GetTransactions(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"transactions": transactions,
 		"ok":           true,
+	})
+}
+
+func DeleteTransaction(c *fiber.Ctx) error {
+	db := database.DB
+	claims := c.Locals("claims").(jwt.MapClaims)
+	userId := claims["id"].(float64)
+	transactionId := c.FormValue("transaction_id")
+
+	if transactionId == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Missing transaction id",
+			"ok":      false,
+		})
+	}
+
+	var transaction models.Transaction
+	if err := db.Where(&models.Transaction{ID: transactionId, UserID: uint(userId)}).First(&transaction).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Transaction was not found",
+			"ok":      false,
+		})
+	}
+
+	if err := db.Unscoped().Delete(&transaction).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Some error occured: " + err.Error(),
+			"ok":      false,
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Transaction was successfully deleted",
+		"ok":      true,
 	})
 }
