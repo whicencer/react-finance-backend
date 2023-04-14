@@ -13,6 +13,11 @@ func CreateTransaction(c *fiber.Ctx) error {
 	claims := c.Locals("claims").(jwt.MapClaims)
 	userId := claims["id"].(float64)
 
+	const (
+		Income  string = "income"
+		Expense string = "expense"
+	)
+
 	var body struct {
 		Status    string
 		Sum       int
@@ -48,6 +53,32 @@ func CreateTransaction(c *fiber.Ctx) error {
 	if err := db.Create(&transaction).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Some error occured: " + err.Error(),
+			"ok":      false,
+		})
+	}
+
+	var card models.Card
+	if err := db.Where(models.Card{ID: body.BalanceId}).First(&card).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Card with specified ID not found",
+			"ok":      false,
+		})
+	}
+
+	if body.Status == Income {
+		card.Balance += body.Sum
+	} else if body.Status == Expense {
+		if card.Balance < body.Sum {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Transaction expense sum can't be more than card balance",
+				"ok":      false,
+			})
+		}
+		card.Balance -= body.Sum
+	}
+	if err := db.Save(&card).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Some error occured on saving: " + err.Error(),
 			"ok":      false,
 		})
 	}
