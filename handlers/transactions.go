@@ -8,15 +8,16 @@ import (
 	"github.com/whicencer/react-finance-backend/models"
 )
 
+const (
+	Income  string = "income"
+	Expense string = "expense"
+)
+
+// CreateTransaction
 func CreateTransaction(c *fiber.Ctx) error {
 	db := database.DB
 	claims := c.Locals("claims").(jwt.MapClaims)
 	userId := claims["id"].(float64)
-
-	const (
-		Income  string = "income"
-		Expense string = "expense"
-	)
 
 	var body struct {
 		Status    string
@@ -50,17 +51,18 @@ func CreateTransaction(c *fiber.Ctx) error {
 		UserID:    uint(userId),
 	}
 
-	if err := db.Create(&transaction).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Some error occured: " + err.Error(),
-			"ok":      false,
-		})
-	}
-
+	// Increment or Decrement card balance
 	var card models.Card
 	if err := db.Where(models.Card{ID: body.BalanceId}).First(&card).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "Card with specified ID not found",
+			"ok":      false,
+		})
+	}
+
+	if err := db.Save(&card).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Some error occured on saving: " + err.Error(),
 			"ok":      false,
 		})
 	}
@@ -76,9 +78,11 @@ func CreateTransaction(c *fiber.Ctx) error {
 		}
 		card.Balance -= body.Sum
 	}
-	if err := db.Save(&card).Error; err != nil {
+
+	// Creating Transaction
+	if err := db.Create(&transaction).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Some error occured on saving: " + err.Error(),
+			"message": "Some error occured: " + err.Error(),
 			"ok":      false,
 		})
 	}
@@ -90,6 +94,7 @@ func CreateTransaction(c *fiber.Ctx) error {
 	})
 }
 
+// GetTransactions
 func GetTransactions(c *fiber.Ctx) error {
 	db := database.DB
 	claims := c.Locals("claims").(jwt.MapClaims)
@@ -109,6 +114,7 @@ func GetTransactions(c *fiber.Ctx) error {
 	})
 }
 
+// DeleteTransaction
 func DeleteTransaction(c *fiber.Ctx) error {
 	db := database.DB
 	claims := c.Locals("claims").(jwt.MapClaims)
@@ -133,6 +139,26 @@ func DeleteTransaction(c *fiber.Ctx) error {
 	if err := db.Unscoped().Delete(&transaction).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": "Some error occured: " + err.Error(),
+			"ok":      false,
+		})
+	}
+
+	var card models.Card
+	if err := db.Where(models.Card{ID: transaction.BalanceId}).First(&card).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Card with specified ID not found",
+			"ok":      false,
+		})
+	}
+
+	if transaction.Status == Income {
+		card.Balance -= transaction.Sum
+	} else if transaction.Status == Expense {
+		card.Balance += transaction.Sum
+	}
+	if err := db.Save(&card).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Some error occured on saving: " + err.Error(),
 			"ok":      false,
 		})
 	}
