@@ -19,7 +19,6 @@ func Register(c *fiber.Ctx) error {
 
 	var body struct {
 		Username string
-		Balance  int
 		Password string
 	}
 
@@ -43,7 +42,6 @@ func Register(c *fiber.Ctx) error {
 
 	user := models.User{
 		Username: body.Username,
-		Balance:  body.Balance,
 		Password: string(hashedPassword),
 	}
 
