@@ -151,11 +151,18 @@ func DeleteTransaction(c *fiber.Ctx) error {
 		})
 	}
 
-	if transaction.Status == Income {
+	switch transaction.Status {
+	case Income:
 		card.Balance -= transaction.Sum
-	} else if transaction.Status == Expense {
+	case Expense:
 		card.Balance += transaction.Sum
+	default:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": "Invalid transaction status",
+			"ok":      false,
+		})
 	}
+
 	if err := db.Save(&card).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Some error occured on saving: " + err.Error(),
