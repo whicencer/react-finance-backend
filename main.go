@@ -7,7 +7,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/whicencer/react-finance-backend/database"
-	"github.com/whicencer/react-finance-backend/env"
 	"github.com/whicencer/react-finance-backend/routes"
 )
 
@@ -21,9 +20,6 @@ func main() {
 
 	// CORS
 	app.Use(cors.New())
-
-	// Init Env variables
-	env.EnvInit()
 
 	// routes
 	routes.SetupRoutes(app)
