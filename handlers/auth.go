@@ -45,12 +45,13 @@ func Register(c *fiber.Ctx) error {
 		Password: string(hashedPassword),
 	}
 
+	var existingUser models.User
+	if err := db.Where("username = ?", user.Username).First(&existingUser).Error; err == nil {
+		return helpers.HandleBadRequest(c, "This username is already taken")
+	}
+
 	if err := db.Create(&user).Error; err != nil {
-		if err.Error() == "duplicated key not allowed" {
-			helpers.HandleInternalServerError(c, "This username is already taken")
-		} else {
-			helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
-		}
+		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	card := models.Card{
