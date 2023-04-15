@@ -5,16 +5,14 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/whicencer/react-finance-backend/helpers"
 )
 
 func AuthMiddleware(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
 
 	if len(authHeader) <= len("Bearer ") {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Auth token is missing",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Auth token is missing")
 	}
 
 	authToken := authHeader[len("Bearer "):]
@@ -24,10 +22,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	})
 
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Invalid token",
-			"ok":      false,
-		})
+		helpers.HandleUnauthorized(c, "Invalid token")
 	}
 
 	c.Locals("claims", token.Claims)

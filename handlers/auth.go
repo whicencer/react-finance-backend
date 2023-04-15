@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/whicencer/react-finance-backend/database"
+	"github.com/whicencer/react-finance-backend/helpers"
 	"github.com/whicencer/react-finance-backend/models"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,33 +24,21 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid request body",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	if len(body.Password) < 8 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Password length should be 8 symbols or more",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Password length should be 8 symbols or more")
 	}
 
 	if len(body.Username) < 2 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Username length should be 2 symbols or more",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Username length should be 2 symbols or more")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to hash password",
-			"ok":      false,
-		})
+		helpers.HandleInternalServerError(c, "Failed to hash password")
 	}
 
 	user := models.User{
@@ -60,15 +49,9 @@ func Register(c *fiber.Ctx) error {
 
 	if err := db.Create(&user).Error; err != nil {
 		if err.Error() == "duplicated key not allowed" {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"message": "This username is already taken",
-				"ok":      false,
-			})
+			helpers.HandleInternalServerError(c, "This username is already taken")
 		} else {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"message": "Some error occured: " + err.Error(),
-				"ok":      false,
-			})
+			helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 		}
 	}
 
@@ -81,10 +64,7 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	if err := db.Create(&card).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Some error occured: " + err.Error(),
-			"ok":      false,
-		})
+		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{
@@ -105,26 +85,17 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid request body",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	var dbUser models.User
 
 	if err := db.Where("username = ?", body.Username).First(&dbUser).Error; err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Invalid login or password",
-			"ok":      false,
-		})
+		helpers.HandleUnauthorized(c, "Invalid login or password")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(body.Password)); err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Invalid login or password",
-			"ok":      false,
-		})
+		helpers.HandleUnauthorized(c, "Invalid login or password")
 	}
 
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -155,10 +126,7 @@ func GetMe(c *fiber.Ctx) error {
 	id := claims["id"].(float64)
 
 	if err := db.Where("ID = ?", id).First(&user).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Cannot find user",
-			"ok":      false,
-		})
+		helpers.HandleNotFound(c, "Cannot find user")
 	}
 
 	return c.JSON(fiber.Map{

@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/whicencer/react-finance-backend/database"
+	"github.com/whicencer/react-finance-backend/helpers"
 	"github.com/whicencer/react-finance-backend/models"
 )
 
@@ -28,17 +29,11 @@ func CreateTransaction(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid request body",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	if body.Sum <= 0 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Transaction sum can't beless than 1",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Transaction sum can't beless than 1")
 	}
 
 	transaction := models.Transaction{
@@ -54,37 +49,28 @@ func CreateTransaction(c *fiber.Ctx) error {
 	// Increment or Decrement card balance
 	var card models.Card
 	if err := db.Where(models.Card{ID: body.BalanceId}).First(&card).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Card with specified ID not found",
-			"ok":      false,
-		})
+		helpers.HandleNotFound(c, "Card with specified ID not found")
 	}
 
 	if err := db.Save(&card).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Some error occured on saving: " + err.Error(),
-			"ok":      false,
-		})
+		helpers.HandleInternalServerError(c, "Some error occured on saving: "+err.Error())
 	}
 
-	if body.Status == Income {
-		card.Balance += body.Sum
-	} else if body.Status == Expense {
+	switch transaction.Status {
+	case Income:
+		card.Balance += transaction.Sum
+	case Expense:
 		if card.Balance < body.Sum {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"message": "Transaction expense sum can't be more than card balance",
-				"ok":      false,
-			})
+			helpers.HandleBadRequest(c, "Transaction expense sum can't be more than card balance")
 		}
-		card.Balance -= body.Sum
+		card.Balance -= transaction.Sum
+	default:
+		helpers.HandleBadRequest(c, "Invalid transaction status")
 	}
 
 	// Creating Transaction
 	if err := db.Create(&transaction).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Some error occured: " + err.Error(),
-			"ok":      false,
-		})
+		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{
@@ -102,10 +88,7 @@ func GetTransactions(c *fiber.Ctx) error {
 
 	var transactions []models.Transaction
 	if err := db.Where(&models.Transaction{UserID: uint(userId)}).Find(&transactions).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Transactions were not found",
-			"ok":      false,
-		})
+		helpers.HandleNotFound(c, "Transactions were not found")
 	}
 
 	return c.JSON(fiber.Map{
@@ -122,33 +105,21 @@ func DeleteTransaction(c *fiber.Ctx) error {
 	transactionId := c.FormValue("transaction_id")
 
 	if transactionId == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Missing transaction id",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Missing transaction id")
 	}
 
 	var transaction models.Transaction
 	if err := db.Where(&models.Transaction{ID: transactionId, UserID: uint(userId)}).First(&transaction).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Transaction was not found",
-			"ok":      false,
-		})
+		helpers.HandleNotFound(c, "Transaction was not found")
 	}
 
 	if err := db.Unscoped().Delete(&transaction).Error; err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Some error occured: " + err.Error(),
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Some error occured: "+err.Error())
 	}
 
 	var card models.Card
 	if err := db.Where(models.Card{ID: transaction.BalanceId}).First(&card).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"message": "Card with specified ID not found",
-			"ok":      false,
-		})
+		helpers.HandleNotFound(c, "Card with specified ID not found")
 	}
 
 	switch transaction.Status {
@@ -157,17 +128,11 @@ func DeleteTransaction(c *fiber.Ctx) error {
 	case Expense:
 		card.Balance += transaction.Sum
 	default:
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid transaction status",
-			"ok":      false,
-		})
+		helpers.HandleBadRequest(c, "Invalid transaction status")
 	}
 
 	if err := db.Save(&card).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Some error occured on saving: " + err.Error(),
-			"ok":      false,
-		})
+		helpers.HandleInternalServerError(c, "Some error occured on saving: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{
