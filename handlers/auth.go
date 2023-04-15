@@ -46,7 +46,7 @@ func Register(c *fiber.Ctx) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 
 	if err != nil {
-		c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to hash password",
 			"ok":      false,
 		})
