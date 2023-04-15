@@ -19,6 +19,7 @@ func main() {
 		port = "3000"
 	}
 
+	// CORS
 	app.Use(cors.New())
 
 	// Init Env variables
