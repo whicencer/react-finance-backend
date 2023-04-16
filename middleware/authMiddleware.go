@@ -12,7 +12,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
 
 	if len(authHeader) <= len("Bearer ") {
-		helpers.HandleBadRequest(c, "Auth token is missing")
+		return helpers.HandleBadRequest(c, "Auth token is missing")
 	}
 
 	authToken := authHeader[len("Bearer "):]
@@ -22,7 +22,7 @@ func AuthMiddleware(c *fiber.Ctx) error {
 	})
 
 	if err != nil {
-		helpers.HandleUnauthorized(c, "Invalid token")
+		return helpers.HandleUnauthorized(c, "Invalid token")
 	}
 
 	c.Locals("claims", token.Claims)

@@ -38,11 +38,11 @@ func CreateCard(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&body); err != nil {
-		helpers.HandleBadRequest(c, "Invalid request body")
+		return helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	if body.Balance <= 0 {
-		helpers.HandleBadRequest(c, "Balance can't be less than 1")
+		return helpers.HandleBadRequest(c, "Balance can't be less than 1")
 	}
 
 	card := models.Card{
@@ -54,7 +54,7 @@ func CreateCard(c *fiber.Ctx) error {
 	}
 
 	if err := db.Create(&card).Error; err != nil {
-		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
+		return helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{
@@ -73,19 +73,19 @@ func UpdateCardName(c *fiber.Ctx) error {
 	newName := c.FormValue("card_name")
 
 	if cardId == "" || newName == "" {
-		helpers.HandleBadRequest(c, "Invalid request body")
+		return helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	var card models.Card
 
 	if err := db.Where(&models.Card{ID: cardId, UserID: uint(userId)}).First(&card).Error; err != nil {
-		helpers.HandleNotFound(c, "Card was not found")
+		return helpers.HandleNotFound(c, "Card was not found")
 	}
 
 	card.CardName = newName
 
 	if err := db.Save(&card).Error; err != nil {
-		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
+		return helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{
@@ -103,25 +103,25 @@ func UpdateCardTheme(c *fiber.Ctx) error {
 	newThemeIdStr := c.FormValue("theme_id")
 
 	if cardId == "" || newThemeIdStr == "" {
-		helpers.HandleBadRequest(c, "Invalid request body")
+		return helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	newThemeId, err := strconv.Atoi(newThemeIdStr)
 
 	if err != nil {
-		helpers.HandleBadRequest(c, "theme_id should be a number")
+		return helpers.HandleBadRequest(c, "theme_id should be a number")
 	}
 
 	var card models.Card
 
 	if err := db.Where(&models.Card{ID: cardId, UserID: uint(userId)}).First(&card).Error; err != nil {
-		helpers.HandleNotFound(c, "Card was not found")
+		return helpers.HandleNotFound(c, "Card was not found")
 	}
 
 	card.ThemeId = newThemeId
 
 	if err := db.Save(&card).Error; err != nil {
-		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
+		return helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{
@@ -138,17 +138,17 @@ func DeleteCard(c *fiber.Ctx) error {
 	cardId := c.FormValue("card_id")
 
 	if cardId == "" {
-		helpers.HandleBadRequest(c, "Invalid request body")
+		return helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	var card models.Card
 
 	if err := db.Where(&models.Card{ID: cardId, UserID: uint(userId)}).First(&card).Error; err != nil {
-		helpers.HandleNotFound(c, "Card was not found")
+		return helpers.HandleNotFound(c, "Card was not found")
 	}
 
 	if err := db.Unscoped().Delete(&card).Error; err != nil {
-		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
+		return helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{

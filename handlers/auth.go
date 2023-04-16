@@ -23,21 +23,21 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&body); err != nil {
-		helpers.HandleBadRequest(c, "Invalid request body")
+		return helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	if len(body.Password) < 8 {
-		helpers.HandleBadRequest(c, "Password length should be 8 symbols or more")
+		return helpers.HandleBadRequest(c, "Password length should be 8 symbols or more")
 	}
 
 	if len(body.Username) < 2 {
-		helpers.HandleBadRequest(c, "Username length should be 2 symbols or more")
+		return helpers.HandleBadRequest(c, "Username length should be 2 symbols or more")
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 
 	if err != nil {
-		helpers.HandleInternalServerError(c, "Failed to hash password")
+		return helpers.HandleInternalServerError(c, "Failed to hash password")
 	}
 
 	user := models.User{
@@ -51,7 +51,7 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	if err := db.Create(&user).Error; err != nil {
-		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
+		return helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	card := models.Card{
@@ -63,7 +63,7 @@ func Register(c *fiber.Ctx) error {
 	}
 
 	if err := db.Create(&card).Error; err != nil {
-		helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
+		return helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
 	return c.JSON(fiber.Map{
@@ -84,17 +84,17 @@ func Login(c *fiber.Ctx) error {
 	}
 
 	if err := c.BodyParser(&body); err != nil {
-		helpers.HandleBadRequest(c, "Invalid request body")
+		return helpers.HandleBadRequest(c, "Invalid request body")
 	}
 
 	var dbUser models.User
 
 	if err := db.Where("username = ?", body.Username).First(&dbUser).Error; err != nil {
-		helpers.HandleUnauthorized(c, "Invalid login or password")
+		return helpers.HandleUnauthorized(c, "Invalid login or password")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(body.Password)); err != nil {
-		helpers.HandleUnauthorized(c, "Invalid login or password")
+		return helpers.HandleUnauthorized(c, "Invalid login or password")
 	}
 
 	token := jwt.New(jwt.SigningMethodHS256)
@@ -125,7 +125,7 @@ func GetMe(c *fiber.Ctx) error {
 	id := claims["id"].(float64)
 
 	if err := db.Where("ID = ?", id).First(&user).Error; err != nil {
-		helpers.HandleNotFound(c, "Cannot find user")
+		return helpers.HandleNotFound(c, "Cannot find user")
 	}
 
 	return c.JSON(fiber.Map{
