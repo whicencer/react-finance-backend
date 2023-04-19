@@ -56,15 +56,14 @@ func CreateTransaction(c *fiber.Ctx) error {
 		return helpers.HandleInternalServerError(c, "Some error occured on saving: "+err.Error())
 	}
 
-	switch transaction.Status {
-	case Income:
-		card.Balance += transaction.Sum
-	case Expense:
+	if body.Status == Income {
+		card.Balance += body.Sum
+	} else if body.Status == Expense {
 		if card.Balance < body.Sum {
 			return helpers.HandleBadRequest(c, "Transaction expense sum can't be more than card balance")
 		}
-		card.Balance -= transaction.Sum
-	default:
+		card.Balance -= body.Sum
+	} else {
 		return helpers.HandleBadRequest(c, "Invalid transaction status")
 	}
 
