@@ -137,3 +137,24 @@ func GetMe(c *fiber.Ctx) error {
 		"ok":   true,
 	})
 }
+
+// Check token
+func CheckToken(c *fiber.Ctx) error {
+	authHeader := c.Get("Authorization")
+
+	if len(authHeader) <= len("Bearer ") {
+		return c.Status(fiber.StatusBadRequest).SendString("False")
+	}
+
+	authToken := authHeader[len("Bearer "):]
+
+	_, err := jwt.Parse(authToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).SendString("False")
+	}
+
+	return c.Status(fiber.StatusOK).SendString("True")
+}
