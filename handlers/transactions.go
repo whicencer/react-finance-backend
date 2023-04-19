@@ -48,7 +48,7 @@ func CreateTransaction(c *fiber.Ctx) error {
 
 	// Increment or Decrement card balance
 	var card models.Card
-	if err := db.Where(models.Card{ID: body.BalanceId}).First(&card).Error; err != nil {
+	if err := db.Where(models.Card{ID: body.BalanceId, UserID: uint(userId)}).First(&card).Error; err != nil {
 		return helpers.HandleNotFound(c, "Card with specified ID not found")
 	}
 
