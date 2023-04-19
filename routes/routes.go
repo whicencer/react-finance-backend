@@ -7,14 +7,10 @@ import (
 )
 
 func SetupRoutes(app *fiber.App) {
-	// To check
-	app.Get("/check", func(c *fiber.Ctx) error {
-		return c.SendString("The server is working correctly")
-	})
-
 	// Auth Group
 	auth := app.Group("/auth")
 
+	auth.Get("/check", handlers.CheckToken)
 	auth.Post("/signup", handlers.Register)
 	auth.Post("/signin", handlers.Login)
 	auth.Get("/me", middleware.AuthMiddleware, handlers.GetMe)
