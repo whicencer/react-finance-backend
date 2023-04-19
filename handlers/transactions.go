@@ -52,10 +52,6 @@ func CreateTransaction(c *fiber.Ctx) error {
 		return helpers.HandleNotFound(c, "Card with specified ID not found")
 	}
 
-	if err := db.Save(&card).Error; err != nil {
-		return helpers.HandleInternalServerError(c, "Some error occured on saving: "+err.Error())
-	}
-
 	if body.Status == Income {
 		card.Balance += body.Sum
 	} else if body.Status == Expense {
@@ -65,6 +61,10 @@ func CreateTransaction(c *fiber.Ctx) error {
 		card.Balance -= body.Sum
 	} else {
 		return helpers.HandleBadRequest(c, "Invalid transaction status")
+	}
+
+	if err := db.Save(&card).Error; err != nil {
+		return helpers.HandleInternalServerError(c, "Some error occured on saving: "+err.Error())
 	}
 
 	// Creating Transaction
