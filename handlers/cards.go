@@ -152,7 +152,7 @@ func DeleteCard(c *fiber.Ctx) error {
 	}
 
 	// Delete all transactions
-	if err := db.Where(&models.Transaction{BalanceId: cardId}).Delete(&models.Transaction{}); err != nil {
+	if err := db.Where(&models.Transaction{BalanceId: cardId}).Delete(&models.Transaction{}).Error; err != nil {
 		return helpers.HandleBadRequest(c, "Some error occured on deleting transactions")
 	}
 
