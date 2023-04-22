@@ -151,6 +151,11 @@ func DeleteCard(c *fiber.Ctx) error {
 		return helpers.HandleInternalServerError(c, "Some error occured: "+err.Error())
 	}
 
+	// Delete all transactions
+	if err := db.Where(&models.Transaction{BalanceId: cardId}).Delete(&models.Transaction{}); err != nil {
+		return helpers.HandleBadRequest(c, "Some error occured on deleting transactions")
+	}
+
 	return c.JSON(fiber.Map{
 		"message": "Card was successfully deleted",
 		"ok":      true,
